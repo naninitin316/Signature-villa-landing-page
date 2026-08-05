@@ -1,0 +1,17 @@
+<svg width="220" height="170" viewBox="12 8 194 150" fill="none" xmlns="http://www.w3.org/2000/svg" aria-labelledby="title">
+  <title>Signature ALTIUS mark</title>
+  <defs>
+    <linearGradient id="altiusOrange" x1="42" y1="14" x2="179" y2="151" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FF8A2A"/>
+      <stop offset="1" stop-color="#F06F1F"/>
+    </linearGradient>
+    <filter id="softShadow" x="7" y="4" width="203" height="158" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#2A2119" flood-opacity="0.12"/>
+    </filter>
+  </defs>
+  <g filter="url(#softShadow)">
+    <path d="M22 148L86 17H118L58 148H22Z" fill="url(#altiusOrange)"/>
+    <path d="M125 44L177 117H139L109 74L125 44Z" fill="url(#altiusOrange)"/>
+    <path d="M75 119H178L196 148H58L75 119Z" fill="url(#altiusOrange)"/>
+  </g>
+</svg>
