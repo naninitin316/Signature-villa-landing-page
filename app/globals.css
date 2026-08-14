@@ -2572,13 +2572,6 @@ footer a:hover {
   transform: rotate(4deg);
 }
 
-.hero-lead-form button:disabled,
-.lead-form button:disabled,
-.exit-form button:disabled {
-  cursor: wait;
-  opacity: 0.76;
-}
-
 .exit-overlay {
   align-items: center;
   background: rgba(10, 9, 8, 0.72);

@@ -183,7 +183,6 @@ function ImageReveal({ children, className = "", style }) {
 
 export default function HomePage() {
   const [submitted, setSubmitted] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
   const [successOpen, setSuccessOpen] = useState(false);
   const [exitOpen, setExitOpen] = useState(false);
   const [exitSeen, setExitSeen] = useState(false);
@@ -230,10 +229,8 @@ export default function HomePage() {
 
   const handleLeadSubmit = async (event, formSource, afterSuccess) => {
     event.preventDefault();
-    if (submitting) return;
 
     const form = event.currentTarget;
-    setSubmitting(true);
     try {
       await sendLeadToCrm(form, formSource);
       setSubmitted(true);
@@ -242,8 +239,6 @@ export default function HomePage() {
       afterSuccess?.();
     } catch (error) {
       console.error("CRM online lead sync failed.", error);
-    } finally {
-      setSubmitting(false);
     }
   };
 
@@ -358,8 +353,8 @@ export default function HomePage() {
                 <input type="email" name="hero-email" placeholder=" " autoComplete="email" inputMode="email" />
                 <span>Email Address (optional)</span>
               </label>
-              <motion.button className="hero-primary-submit" type="submit" disabled={submitting} whileHover={reduceMotion ? undefined : magneticHover} whileTap={{ scale: 0.98 }}>
-                {submitting ? "Sending..." : "Request Villa Details"}
+              <motion.button className="hero-primary-submit" type="submit" whileHover={reduceMotion ? undefined : magneticHover} whileTap={{ scale: 0.98 }}>
+                Request Villa Details
                 <ChevronRight size={18} />
               </motion.button>
               <motion.a className="hero-secondary-action" href="#lead" whileHover={reduceMotion ? undefined : magneticHover} whileTap={{ scale: 0.98 }}>
@@ -696,8 +691,8 @@ export default function HomePage() {
               Email address <span>optional</span>
               <input type="email" name="email" placeholder="you@example.com" autoComplete="email" inputMode="email" />
             </label>
-            <motion.button type="submit" disabled={submitting} whileHover={reduceMotion ? undefined : magneticHover} whileTap={{ scale: 0.98 }}>
-              {submitting ? "Sending..." : "Schedule Private Walkthrough"}
+            <motion.button type="submit" whileHover={reduceMotion ? undefined : magneticHover} whileTap={{ scale: 0.98 }}>
+              Schedule Private Walkthrough
               <ChevronRight size={18} />
             </motion.button>
             {submitted ? (
@@ -801,8 +796,8 @@ export default function HomePage() {
               >
                 <input type="text" name="exit-name" placeholder="Full name" autoComplete="name" />
                 <input type="tel" name="exit-phone" placeholder="Mobile number" autoComplete="tel" inputMode="tel" />
-                <motion.button type="submit" disabled={submitting} whileHover={reduceMotion ? undefined : magneticHover} whileTap={{ scale: 0.98 }}>
-                  {submitting ? "Sending..." : "Send Villa Details"}
+                <motion.button type="submit" whileHover={reduceMotion ? undefined : magneticHover} whileTap={{ scale: 0.98 }}>
+                  Send Villa Details
                   <ChevronRight size={17} />
                 </motion.button>
               </form>
