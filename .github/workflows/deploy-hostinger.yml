@@ -1,0 +1,48 @@
+name: Build Hostinger Static Site
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build static export
+        run: npm run build
+        env:
+          NEXT_PUBLIC_CRM_API_URL: https://crm.nrinnovium.online/api
+
+      - name: Publish static export to hostinger branch
+        run: |
+          set -euo pipefail
+          export DEPLOY_DIR="$(mktemp -d)"
+          cp -R out/. "$DEPLOY_DIR/"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin hostinger
+          git switch --force-create hostinger origin/hostinger
+          find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          cp -R "$DEPLOY_DIR"/. .
+          touch .nojekyll
+          git add -A
+          git commit -m "Deploy static site from ${GITHUB_SHA}" || exit 0
+          git push origin hostinger
