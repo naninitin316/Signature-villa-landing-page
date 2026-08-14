@@ -18,46 +18,43 @@ import {
 
 const ease = [0.19, 1, 0.22, 1];
 const slowEase = [0.16, 1, 0.3, 1];
+const CRM_API_URL = (process.env.NEXT_PUBLIC_CRM_API_URL || "http://localhost:3001/api").replace(/\/$/, "");
+const CRM_COMPANY = "Indhu Infra";
+const CRM_PROJECT = "signaturevillas";
+const CRM_SOURCE = "signaturevillas.online";
 
+// Animate only opacity + transform: both are GPU-composited, so scroll stays at 60fps.
+// Animating filter/blur or clip-path forces a full repaint every frame and was the
+// main source of the sluggish feel.
 const fadeUp = {
-  hidden: { opacity: 0, y: 30, filter: "blur(4px)" },
-  visible: { opacity: 1, y: 0, filter: "blur(0px)" },
+  hidden: { opacity: 0, y: 24 },
+  visible: { opacity: 1, y: 0 },
 };
 
 const fadeIn = {
-  hidden: { opacity: 0, scale: 0.98, filter: "blur(6px)" },
-  visible: { opacity: 1, scale: 1, filter: "blur(0px)" },
+  hidden: { opacity: 0, scale: 0.985 },
+  visible: { opacity: 1, scale: 1 },
 };
 
 const stagger = {
   hidden: {},
-  visible: { transition: { staggerChildren: 0.095, delayChildren: 0.08 } },
+  visible: { transition: { staggerChildren: 0.07, delayChildren: 0.06 } },
 };
 
 const imageReveal = {
-  hidden: {
-    opacity: 0,
-    scale: 1.02,
-    clipPath: "inset(8% 6% 8% 6% round 12px)",
-    filter: "blur(2px) saturate(0.96)",
-  },
-  visible: {
-    opacity: 1,
-    scale: 1,
-    clipPath: "inset(0% 0% 0% 0% round 12px)",
-    filter: "blur(0px) saturate(1.08)",
-  },
+  hidden: { opacity: 0, scale: 1.03 },
+  visible: { opacity: 1, scale: 1 },
 };
 
 const sectionReveal = {
-  hidden: { opacity: 0.72 },
-  visible: { opacity: 1, transition: { staggerChildren: 0.11 } },
+  hidden: { opacity: 0.85 },
+  visible: { opacity: 1, transition: { staggerChildren: 0.08 } },
 };
 
 const magneticHover = {
-  y: -5,
-  scale: 1.015,
-  transition: { duration: 0.42, ease },
+  y: -4,
+  scale: 1.012,
+  transition: { duration: 0.32, ease },
 };
 
 const proofItems = [
@@ -94,6 +91,59 @@ const locationNotes = [
   ["Srisailam Highway", "A connected address with nature at its edge", "Tukkuguda"],
 ];
 
+async function sendLeadToCrm(form, formSource) {
+  const formData = new FormData(form);
+  const getValue = (...names) => {
+    for (const name of names) {
+      const value = formData.get(name);
+      if (typeof value === "string" && value.trim()) return value.trim();
+    }
+    for (const [fieldName, value] of formData.entries()) {
+      if (names.some((name) => fieldName === name || fieldName.endsWith(`-${name}`)) && typeof value === "string" && value.trim()) {
+        return value.trim();
+      }
+    }
+    return "";
+  };
+
+  const payload = {
+    company: CRM_COMPANY,
+    project: CRM_PROJECT,
+    name: getValue("hero-name", "name", "exit-name"),
+    phone: getValue("hero-mobile", "phone", "exit-phone"),
+    email: getValue("hero-email", "email"),
+    message: `Lead submitted from ${formSource} on Signature Nature's Edge.`,
+    source: CRM_SOURCE,
+  };
+
+  const response = await fetch(`${CRM_API_URL}/online-leads`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const message = await response.text();
+    throw new Error(message || "CRM lead sync failed.");
+  }
+}
+
+// Parallax is pleasant on a large pointer-driven screen and pure jank on a phone,
+// where it fights native scroll momentum. Gate it on viewport width.
+function useParallaxEnabled() {
+  const [enabled, setEnabled] = useState(false);
+
+  useEffect(() => {
+    const query = window.matchMedia("(min-width: 1081px)");
+    const sync = () => setEnabled(query.matches);
+    sync();
+    query.addEventListener("change", sync);
+    return () => query.removeEventListener("change", sync);
+  }, []);
+
+  return enabled;
+}
+
 function Reveal({ children, className = "", delay = 0, id, as: Tag = motion.div }) {
   const reduceMotion = useReducedMotion();
 
@@ -104,8 +154,8 @@ function Reveal({ children, className = "", delay = 0, id, as: Tag = motion.div 
       variants={fadeUp}
       initial="hidden"
       whileInView="visible"
-      viewport={{ once: true, amount: 0.24 }}
-      transition={{ duration: reduceMotion ? 0.01 : 0.6, ease, delay }}
+      viewport={{ once: true, amount: 0.2, margin: "0px 0px -8% 0px" }}
+      transition={{ duration: reduceMotion ? 0.01 : 0.5, ease, delay }}
     >
       {children}
     </Tag>
@@ -122,9 +172,9 @@ function ImageReveal({ children, className = "", style }) {
       variants={imageReveal}
       initial="hidden"
       whileInView="visible"
-      viewport={{ once: true, amount: 0.28 }}
+      viewport={{ once: true, amount: 0.15, margin: "0px 0px -8% 0px" }}
       whileHover={reduceMotion ? undefined : magneticHover}
-      transition={{ duration: reduceMotion ? 0.01 : 0.85, ease: slowEase }}
+      transition={{ duration: reduceMotion ? 0.01 : 0.7, ease: slowEase }}
     >
       {children}
     </motion.div>
@@ -136,12 +186,14 @@ export default function HomePage() {
   const [exitOpen, setExitOpen] = useState(false);
   const [exitSeen, setExitSeen] = useState(false);
   const reduceMotion = useReducedMotion();
+  const parallaxOn = useParallaxEnabled();
+  const motionOn = parallaxOn && !reduceMotion;
   const { scrollYProgress } = useScroll();
-  const heroY = useTransform(scrollYProgress, [0, 0.32], [0, -90]);
-  const plateY = useTransform(scrollYProgress, [0.1, 0.65], [40, -40]);
-  const pricingY = useTransform(scrollYProgress, [0.58, 0.92], [36, -36]);
-  const architectureY = useTransform(scrollYProgress, [0.18, 0.5], [80, -80]);
-  const communityY = useTransform(scrollYProgress, [0.38, 0.72], [70, -70]);
+  const heroY = useTransform(scrollYProgress, [0, 0.32], [0, -70]);
+  const plateY = useTransform(scrollYProgress, [0.1, 0.65], [32, -32]);
+  const pricingY = useTransform(scrollYProgress, [0.58, 0.92], [28, -28]);
+  const architectureY = useTransform(scrollYProgress, [0.18, 0.5], [60, -60]);
+  const communityY = useTransform(scrollYProgress, [0.38, 0.72], [54, -54]);
 
   useEffect(() => {
     const showExitOffer = (event) => {
@@ -150,28 +202,20 @@ export default function HomePage() {
       setExitSeen(true);
     };
 
+    // Genuine exit intent only. The old build also fired this on phones after a
+    // mere 260px of scroll, which buried the hero behind a modal before anyone
+    // had seen a single villa.
     const showMobileOffer = () => {
       if (exitSeen || submitted || document.visibilityState !== "hidden") return;
       setExitOpen(true);
       setExitSeen(true);
     };
 
-    const showScrollOffer = () => {
-      if (exitSeen || submitted) return;
-      if (window.innerWidth > 780) return;
-      if (window.scrollY > 260) {
-        setExitOpen(true);
-        setExitSeen(true);
-      }
-    };
-
     document.addEventListener("mouseleave", showExitOffer);
     document.addEventListener("visibilitychange", showMobileOffer);
-    window.addEventListener("scroll", showScrollOffer, { passive: true });
     return () => {
       document.removeEventListener("mouseleave", showExitOffer);
       document.removeEventListener("visibilitychange", showMobileOffer);
-      window.removeEventListener("scroll", showScrollOffer);
     };
   }, [exitSeen, submitted]);
 
@@ -198,12 +242,17 @@ export default function HomePage() {
       <motion.section className="hero" id="top" initial="hidden" animate="visible" variants={sectionReveal}>
         <motion.div
           className="hero-art"
-          style={{ y: reduceMotion ? 0 : heroY }}
-          initial={{ scale: 1.1, opacity: 0 }}
-          animate={{ scale: 1, opacity: 0.96 }}
+          style={{ y: motionOn ? heroY : 0 }}
+          initial={{ scale: 1.08, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: reduceMotion ? 0.01 : 1.8, ease: slowEase }}
         >
-          <img src="/assets/natures-edge-full-villa-hero.png" alt="Signature Nature's Edge luxury villas in a landscaped gated community" />
+          <img src="/assets/natures-edge-full-villa-hero.webp"
+            srcSet="/assets/natures-edge-full-villa-hero-960.webp 960w, /assets/natures-edge-full-villa-hero.webp 1800w"
+            sizes="100vw"
+            alt="Signature Nature's Edge luxury villas in a landscaped gated community"
+            fetchPriority="high"
+            decoding="async" />
         </motion.div>
         <div className="hero-sun" aria-hidden="true" />
         <div className="hero-veil" />
@@ -262,9 +311,15 @@ export default function HomePage() {
             <p>Get the villa details and available private visit windows.</p>
             <form
               className="hero-lead-form"
-              onSubmit={(event) => {
+              onSubmit={async (event) => {
                 event.preventDefault();
-                setSubmitted(true);
+                try {
+                  await sendLeadToCrm(event.currentTarget, "hero form");
+                  setSubmitted(true);
+                  event.currentTarget.reset();
+                } catch (error) {
+                  console.error("CRM online lead sync failed.", error);
+                }
               }}
             >
               <label>
@@ -297,7 +352,7 @@ export default function HomePage() {
         </motion.div>
       </motion.section>
 
-      <motion.section className="journey-section arrival-chapter" id="residences" initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.22 }} variants={sectionReveal}>
+      <section className="journey-section arrival-chapter" id="residences">
         <Reveal className="arrival-copy">
           <span className="chapter-mark">01</span>
           <span className="chapter-label">Arrival</span>
@@ -326,9 +381,9 @@ export default function HomePage() {
             Arrange a site visit
           </motion.a>
         </Reveal>
-      </motion.section>
+      </section>
 
-      <motion.section className="journey-section lifestyle-chapter" initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.22 }} variants={sectionReveal}>
+      <section className="journey-section lifestyle-chapter">
         <div className="lifestyle-panel">
           <Reveal>
             <span className="chapter-mark">02</span>
@@ -344,17 +399,25 @@ export default function HomePage() {
             ))}
           </div>
         </div>
-        <ImageReveal className="lifestyle-visual" style={{ y: reduceMotion ? 0 : plateY }}>
-          <img src="/assets/natures-edge-editorial-villa.png" alt="Contemporary villa exterior in a premium gated community" />
+        <ImageReveal className="lifestyle-visual" style={{ y: motionOn ? plateY : 0 }}>
+          <img src="/assets/natures-edge-editorial-villa.webp"
+            srcSet="/assets/natures-edge-editorial-villa-960.webp 960w, /assets/natures-edge-editorial-villa.webp 1800w"
+            sizes="100vw" alt="Contemporary villa exterior in a premium gated community"  loading="lazy" decoding="async" />
           <span className="image-caption">Villa mornings</span>
         </ImageReveal>
-      </motion.section>
+      </section>
 
-      <motion.section className="journey-section architecture-chapter" initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.22 }} variants={sectionReveal}>
-        <ImageReveal className="architecture-frame" style={{ y: reduceMotion ? 0 : architectureY }}>
-          <img src="/assets/natures-edge-editorial-arrival.png" alt="Gated arrival to a premium villa community" />
-          <span className="image-caption">Private villa arrival</span>
-        </ImageReveal>
+      <section className="journey-section architecture-chapter">
+        <div className="architecture-bg" aria-hidden="true">
+          <img
+            src="/assets/villa-terrace-evening.webp"
+            srcSet="/assets/villa-terrace-evening-960.webp 960w, /assets/villa-terrace-evening.webp 1536w"
+            sizes="100vw"
+            alt=""
+            loading="lazy"
+            decoding="async"
+          />
+        </div>
         <Reveal className="architecture-copy">
           <span className="chapter-mark">03</span>
           <span className="chapter-label">Architecture</span>
@@ -363,8 +426,12 @@ export default function HomePage() {
             Contemporary 4BHK villas created for natural light, meaningful
             privacy, and the everyday rituals of a larger home.
           </p>
+          <p className="architecture-note">
+            4BHK villas with room for family life, calm routines, and a garden of
+            your own.
+          </p>
         </Reveal>
-        <Reveal className="architecture-scale" delay={0.12}>
+        <Reveal className="architecture-scale" delay={0.1}>
           <span>Villa formats</span>
           <div className="architecture-scale-row">
             <div className="architecture-scale-stat">
@@ -376,16 +443,20 @@ export default function HomePage() {
               <strong>350</strong>
               <em>Sq. yd plot</em>
             </div>
+            <div className="architecture-scale-divider" aria-hidden="true" />
+            <div className="architecture-scale-stat">
+              <strong>4</strong>
+              <em>BHK east facing</em>
+            </div>
           </div>
         </Reveal>
-        <Reveal className="architecture-note" delay={0.18}>
-          <span>4BHK villas with room for family life, calm routines, and a garden of your own.</span>
-        </Reveal>
-      </motion.section>
+      </section>
 
-      <motion.section className="journey-section amenities-chapter" initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.22 }} variants={sectionReveal}>
-        <ImageReveal className="amenities-image" style={{ y: reduceMotion ? 0 : pricingY }}>
-          <img src="/assets/natures-edge-editorial-garden.png" alt="Private garden and pool setting at a luxury villa" />
+      <section className="journey-section amenities-chapter">
+        <ImageReveal className="amenities-image" style={{ y: motionOn ? pricingY : 0 }}>
+          <img src="/assets/natures-edge-editorial-garden.webp"
+            srcSet="/assets/natures-edge-editorial-garden-960.webp 960w, /assets/natures-edge-editorial-garden.webp 1800w"
+            sizes="100vw" alt="Private garden and pool setting at a luxury villa"  loading="lazy" decoding="async" />
         </ImageReveal>
         <Reveal className="amenities-heading">
           <span className="chapter-mark">04</span>
@@ -412,9 +483,9 @@ export default function HomePage() {
             View Gallery
           </motion.a>
         </Reveal>
-      </motion.section>
+      </section>
 
-      <motion.section className="journey-section gallery-chapter" id="gallery" initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.12 }} variants={sectionReveal}>
+      <section className="journey-section gallery-chapter" id="gallery">
         <Reveal className="gallery-heading">
           <span className="section-kicker">Gallery</span>
           <h2>See Nature&apos;s Edge for yourself.</h2>
@@ -422,15 +493,15 @@ export default function HomePage() {
         </Reveal>
         <div className="photo-grid">
           {[
-            ["/assets/natures-edge-official-view-1.jpg", "Signature Nature's Edge villa row at dusk"],
-            ["/assets/natures-edge-official-view-4.jpg", "Signature Nature's Edge villa facade and driveway"],
-            ["/assets/natures-edge-official-view-3.jpg", "Landscaped seating court within the villa community"],
-            ["/assets/natures-edge-official-view-2.jpg", "Aerial view of the villa avenue and children's play area"],
-            ["/assets/natures-edge-official-view-5.jpg", "Row of villas along the community street"],
-            ["/assets/natures-edge-official-community.jpeg", "Villa community streetscape"],
+            ["/assets/natures-edge-official-view-1.webp", "Signature Nature's Edge villa row at dusk"],
+            ["/assets/natures-edge-official-view-4.webp", "Signature Nature's Edge villa facade and driveway"],
+            ["/assets/natures-edge-official-view-3.webp", "Landscaped seating court within the villa community"],
+            ["/assets/natures-edge-official-view-2.webp", "Aerial view of the villa avenue and children's play area"],
+            ["/assets/natures-edge-official-view-5.webp", "Row of villas along the community street"],
+            ["/assets/natures-edge-official-community.webp", "Villa community streetscape"],
           ].map(([src, alt], index) => (
             <Reveal className="photo-tile" delay={index * 0.04} key={src}>
-              <img src={src} alt={alt} loading="lazy" />
+              <img src={src} alt={alt} loading="lazy"  decoding="async" />
             </Reveal>
           ))}
         </div>
@@ -440,14 +511,14 @@ export default function HomePage() {
         </Reveal>
         <div className="floorplan-grid">
           <Reveal className="floorplan-card" delay={0.12}>
-            <img src="/assets/natures-edge-official-gallery-1.png" alt="Nature's Edge 300 sq. yd. villa floor plan across ground, first, and second floors" loading="lazy" />
+            <img src="/assets/natures-edge-official-gallery-1.webp" alt="Nature's Edge 300 sq. yd. villa floor plan across ground, first, and second floors" loading="lazy"  decoding="async" />
             <div className="floorplan-caption">
               <strong>300 sq. yd.</strong>
               <span>East facing · Ground + 2 floors</span>
             </div>
           </Reveal>
           <Reveal className="floorplan-card" delay={0.18}>
-            <img src="/assets/natures-edge-official-gallery-2.png" alt="Nature's Edge 350 sq. yd. villa floor plan across ground, first, and second floors" loading="lazy" />
+            <img src="/assets/natures-edge-official-gallery-2.webp" alt="Nature's Edge 350 sq. yd. villa floor plan across ground, first, and second floors" loading="lazy"  decoding="async" />
             <div className="floorplan-caption">
               <strong>350 sq. yd.</strong>
               <span>East facing · Ground + 2 floors</span>
@@ -460,11 +531,13 @@ export default function HomePage() {
             Get Full Floor Plans &amp; Pricing
           </motion.a>
         </Reveal>
-      </motion.section>
+      </section>
 
-      <motion.section className="journey-section community-chapter" initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.22 }} variants={sectionReveal}>
-        <ImageReveal className="community-image" style={{ y: reduceMotion ? 0 : communityY }}>
-          <img src="/assets/natures-edge-editorial-aerial.png" alt="Low-density villa community beside a green forest edge" />
+      <section className="journey-section community-chapter">
+        <ImageReveal className="community-image" style={{ y: motionOn ? communityY : 0 }}>
+          <img src="/assets/natures-edge-editorial-aerial.webp"
+            srcSet="/assets/natures-edge-editorial-aerial-960.webp 960w, /assets/natures-edge-editorial-aerial.webp 1800w"
+            sizes="100vw" alt="Low-density villa community beside a green forest edge"  loading="lazy" decoding="async" />
           <span className="image-caption">Garden community</span>
         </ImageReveal>
         <Reveal className="community-copy">
@@ -481,11 +554,13 @@ export default function HomePage() {
             ))}
           </div>
         </Reveal>
-      </motion.section>
+      </section>
 
-      <motion.section className="journey-section location-chapter" id="location" initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.22 }} variants={sectionReveal}>
-        <ImageReveal className="location-panorama" style={{ y: reduceMotion ? 0 : plateY }}>
-          <img src="/assets/natures-edge-editorial-aerial.png" alt="Low-density villa community beside a green forest edge" />
+      <section className="journey-section location-chapter" id="location">
+        <ImageReveal className="location-panorama" style={{ y: motionOn ? plateY : 0 }}>
+          <img src="/assets/natures-edge-editorial-aerial.webp"
+            srcSet="/assets/natures-edge-editorial-aerial-960.webp 960w, /assets/natures-edge-editorial-aerial.webp 1800w"
+            sizes="100vw" alt="Low-density villa community beside a green forest edge"  loading="lazy" decoding="async" />
           <span className="image-caption">Villa community</span>
         </ImageReveal>
         <Reveal className="location-headline">
@@ -502,11 +577,13 @@ export default function HomePage() {
             </Reveal>
           ))}
         </div>
-      </motion.section>
+      </section>
 
-      <motion.section className="journey-section investment-chapter" id="pricing" initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.22 }} variants={sectionReveal}>
-        <ImageReveal className="investment-texture" style={{ y: reduceMotion ? 0 : pricingY }}>
-          <img src="/assets/natures-edge-editorial-clubhouse.png" alt="Premium clubhouse pool at a gated villa community" />
+      <section className="journey-section investment-chapter" id="pricing">
+        <ImageReveal className="investment-texture" style={{ y: motionOn ? pricingY : 0 }}>
+          <img src="/assets/natures-edge-editorial-clubhouse.webp"
+            srcSet="/assets/natures-edge-editorial-clubhouse-960.webp 960w, /assets/natures-edge-editorial-clubhouse.webp 1800w"
+            sizes="100vw" alt="Premium clubhouse pool at a gated villa community"  loading="lazy" decoding="async" />
         </ImageReveal>
         <Reveal className="investment-copy">
           <span className="chapter-mark">07</span>
@@ -524,11 +601,13 @@ export default function HomePage() {
             Request Villa Details
           </motion.a>
         </Reveal>
-      </motion.section>
+      </section>
 
-      <motion.section className="journey-section ownership-chapter" initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.22 }} variants={sectionReveal}>
-        <ImageReveal className="ownership-image image-card" style={{ y: reduceMotion ? 0 : architectureY }}>
-          <img src="/assets/natures-edge-editorial-villa.png" alt="Contemporary luxury villa in a landscaped community" />
+      <section className="journey-section ownership-chapter">
+        <ImageReveal className="ownership-image image-card" style={{ y: motionOn ? architectureY : 0 }}>
+          <img src="/assets/natures-edge-editorial-villa.webp"
+            srcSet="/assets/natures-edge-editorial-villa-960.webp 960w, /assets/natures-edge-editorial-villa.webp 1800w"
+            sizes="100vw" alt="Contemporary luxury villa in a landscaped community"  loading="lazy" decoding="async" />
         </ImageReveal>
         <Reveal className="ownership-heading">
           <span className="chapter-mark">08</span>
@@ -553,11 +632,13 @@ export default function HomePage() {
           <strong>Clarity before commitment.</strong>
           <span>Approval details and a guided villa walkthrough are available for serious shortlisting.</span>
         </Reveal>
-      </motion.section>
+      </section>
 
-      <motion.section className="journey-section invitation-chapter" initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.22 }} variants={sectionReveal}>
-        <ImageReveal className="invitation-image" style={{ y: reduceMotion ? 0 : plateY }}>
-          <img src="/assets/natures-edge-editorial-arrival.png" alt="Gated arrival for a private villa site visit" />
+      <section className="journey-section invitation-chapter">
+        <ImageReveal className="invitation-image" style={{ y: motionOn ? plateY : 0 }}>
+          <img src="/assets/natures-edge-editorial-arrival.webp"
+            srcSet="/assets/natures-edge-editorial-arrival-960.webp 960w, /assets/natures-edge-editorial-arrival.webp 1800w"
+            sizes="100vw" alt="Gated arrival for a private villa site visit"  loading="lazy" decoding="async" />
         </ImageReveal>
         <Reveal className="invitation-copy">
           <span className="chapter-mark">09</span>
@@ -577,9 +658,15 @@ export default function HomePage() {
           <span className="lead-form-label">Private appointment desk</span>
           <form
             className="lead-form"
-            onSubmit={(event) => {
+            onSubmit={async (event) => {
               event.preventDefault();
-              setSubmitted(true);
+              try {
+                await sendLeadToCrm(event.currentTarget, "appointment form");
+                setSubmitted(true);
+                event.currentTarget.reset();
+              } catch (error) {
+                console.error("CRM online lead sync failed.", error);
+              }
             }}
           >
             <label>
@@ -605,7 +692,7 @@ export default function HomePage() {
             )}
           </form>
         </Reveal>
-      </motion.section>
+      </section>
 
       <footer>
         <div>
@@ -663,7 +750,9 @@ export default function HomePage() {
               <X size={18} />
             </button>
             <div className="exit-visual">
-              <img src="/assets/natures-edge-editorial-garden.png" alt="Villa garden preview" />
+              <img src="/assets/natures-edge-editorial-garden.webp"
+            srcSet="/assets/natures-edge-editorial-garden-960.webp 960w, /assets/natures-edge-editorial-garden.webp 1800w"
+            sizes="100vw" alt="Villa garden preview"  loading="lazy" decoding="async" />
             </div>
             <div className="exit-copy">
               <span className="chapter-label">Private Access Desk</span>
@@ -671,10 +760,16 @@ export default function HomePage() {
               <p>Share your number and we&apos;ll send project details and visit slots as you browse.</p>
               <form
                 className="exit-form"
-                onSubmit={(event) => {
+                onSubmit={async (event) => {
                   event.preventDefault();
-                  setSubmitted(true);
-                  setExitOpen(false);
+                  try {
+                    await sendLeadToCrm(event.currentTarget, "exit form");
+                    setSubmitted(true);
+                    setExitOpen(false);
+                    event.currentTarget.reset();
+                  } catch (error) {
+                    console.error("CRM online lead sync failed.", error);
+                  }
                 }}
               >
                 <input type="text" name="exit-name" placeholder="Full name" autoComplete="name" />

@@ -36,6 +36,26 @@ html {
   -webkit-text-size-adjust: 100%;
 }
 
+/* Every in-page jump (#lead, #gallery, #location…) used to land with the target
+   tucked under the fixed header. */
+:target,
+[id] {
+  scroll-margin-top: 96px;
+}
+
+::selection {
+  background: rgba(237, 122, 37, 0.28);
+  color: inherit;
+}
+
+/* Inputs get a visible, on-brand focus ring across the whole page. */
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid rgba(237, 122, 37, 0.55);
+  outline-offset: 2px;
+}
+
 body {
   margin: 0;
   background:
@@ -211,9 +231,18 @@ nav a:hover {
   letter-spacing: 0;
   overflow: hidden;
   position: relative;
-  transition: transform 320ms cubic-bezier(0.19, 1, 0.22, 1), box-shadow 320ms cubic-bezier(0.19, 1, 0.22, 1), background 320ms ease, border-color 320ms ease;
+  /* Snappy, not sluggish: ~200ms is the range that reads as responsive.
+     The previous 320ms made every control feel like it lagged the cursor. */
+  transition:
+    transform 200ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 200ms cubic-bezier(0.22, 1, 0.36, 1),
+    background 200ms ease,
+    border-color 200ms ease,
+    filter 200ms ease;
 }
 
+/* A single light sheen that crosses the button, instead of the old radial
+   flash-bulb burst. Reads as a material highlight rather than a 2010s glow. */
 .header-cta::after,
 .primary-btn::after,
 .secondary-btn::after,
@@ -224,17 +253,13 @@ nav a:hover {
 .hero-primary-submit::after,
 .hero-secondary-action::after,
 .sticky-actions a::after {
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.42), transparent 58%);
+  background: linear-gradient(105deg, transparent 36%, rgba(255, 255, 255, 0.24) 50%, transparent 64%);
   content: "";
-  height: 160%;
-  left: 50%;
-  opacity: 0;
+  inset: 0;
   pointer-events: none;
   position: absolute;
-  top: 50%;
-  transform: translate(-50%, -50%) scale(0.35);
-  transition: opacity 420ms ease, transform 620ms cubic-bezier(0.19, 1, 0.22, 1);
-  width: 160%;
+  transform: translateX(-120%);
+  transition: transform 620ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .header-cta:hover::after,
@@ -247,8 +272,38 @@ nav a:hover {
 .hero-primary-submit:hover::after,
 .hero-secondary-action:hover::after,
 .sticky-actions a:hover::after {
-  opacity: 0.32;
-  transform: translate(-50%, -50%) scale(1);
+  transform: translateX(120%);
+}
+
+/* Keyboard focus was entirely invisible before — a real accessibility gap on a
+   page whose whole purpose is a form. */
+.header-cta:focus-visible,
+.primary-btn:focus-visible,
+.secondary-btn:focus-visible,
+.lead-form button:focus-visible,
+.pricing-cta:focus-visible,
+.footer-tour-cta:focus-visible,
+.exit-form button:focus-visible,
+.hero-primary-submit:focus-visible,
+.hero-secondary-action:focus-visible,
+.sticky-actions a:focus-visible,
+nav a:focus-visible,
+.brand:focus-visible,
+.exit-close:focus-visible {
+  outline: 2px solid #f2c277;
+  outline-offset: 3px;
+}
+
+.header-cta:active,
+.primary-btn:active,
+.secondary-btn:active,
+.lead-form button:active,
+.pricing-cta:active,
+.footer-tour-cta:active,
+.exit-form button:active,
+.hero-primary-submit:active,
+.hero-secondary-action:active {
+  transform: translateY(1px) scale(0.99);
 }
 
 .header-cta > *,
@@ -415,7 +470,9 @@ nav a:hover {
 }
 
 .hero-art {
-  background-image: url("/assets/natures-edge-full-villa-hero.png");
+  /* Only ever seen blurred behind the sharp <img>, so the small variant is
+     indistinguishable and saves ~1MB. */
+  background-image: url("/assets/natures-edge-full-villa-hero-960.webp");
   background-position: 58% center;
   background-size: cover;
   opacity: 1;
@@ -1092,9 +1149,11 @@ p::selection {
   }
 }
 
+/* svh, not vh: on mobile `100vh` includes the retracting browser chrome, which
+   forced every chapter taller than the screen and left dead space at the bottom. */
 .journey-section {
   color: white;
-  min-height: 100vh;
+  min-height: min(88svh, 880px);
   overflow: hidden;
   padding: clamp(86px, 9vw, 142px) var(--page-pad);
   position: relative;
@@ -1183,6 +1242,8 @@ p::selection {
   position: absolute;
 }
 
+/* `cover` — not `contain`. Every framed photo used to be letterboxed inside a dark
+   box, which is what made the villas read as small, dull inserts. */
 .journey-image img,
 .lifestyle-visual img,
 .architecture-frame img,
@@ -1194,7 +1255,7 @@ p::selection {
 .invitation-image img,
 .image-card img {
   height: 100%;
-  object-fit: contain;
+  object-fit: cover;
   width: 100%;
 }
 
@@ -1203,15 +1264,11 @@ p::selection {
 .architecture-frame,
 .community-image,
 .ownership-image {
-  background:
-    radial-gradient(circle at 60% 40%, rgba(255, 253, 248, 0.14), transparent 42%),
-    linear-gradient(135deg, rgba(18, 16, 14, 0.82), rgba(43, 34, 25, 0.72));
-  border: 1px solid rgba(255, 253, 248, 0.18);
-  border-radius: 12px;
+  background: #1a1713;
+  border: 1px solid rgba(255, 253, 248, 0.14);
+  border-radius: 16px;
   box-shadow: 0 28px 70px rgba(0, 0, 0, 0.2);
-  clip-path: inset(0 round 12px);
   overflow: hidden;
-  will-change: transform, clip-path;
 }
 
 .image-card img,
@@ -1223,9 +1280,8 @@ p::selection {
 .ownership-image img,
 .invitation-image img {
   animation: none;
-  filter: saturate(1.06) contrast(1.03);
+  filter: saturate(1.08) contrast(1.04) brightness(1.03);
   transform-origin: center;
-  will-change: auto;
 }
 
 .image-caption {
@@ -1245,14 +1301,13 @@ p::selection {
   z-index: 3;
 }
 
+/* A whisper of top light for depth — anything heavier greys the photo out. */
 .image-card::after,
 .lifestyle-visual::after,
 .architecture-frame::after,
 .community-image::after,
 .ownership-image::after {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.2), transparent 34%),
-    radial-gradient(circle at 18% 8%, rgba(255, 224, 166, 0.24), transparent 24%);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.07), transparent 28%);
   content: "";
   inset: 0;
   pointer-events: none;
@@ -1263,7 +1318,7 @@ p::selection {
   align-items: center;
   background:
     linear-gradient(90deg, rgba(9, 8, 7, 0.58), rgba(9, 8, 7, 0.12) 58%, rgba(9, 8, 7, 0.2)),
-    url("/assets/natures-edge-editorial-arrival.png") center center / cover no-repeat,
+    url("/assets/natures-edge-editorial-arrival.webp") center center / cover no-repeat,
     #11100e;
   display: grid;
   gap: clamp(30px, 5vw, 78px);
@@ -1285,18 +1340,14 @@ p::selection {
 }
 
 .journey-image::after,
-.lifestyle-visual::after,
-.architecture-frame::after,
-.community-image::after,
 .investment-texture::after,
 .amenities-image::after,
 .location-panorama::after,
 .invitation-image::after {
-  background:
-    linear-gradient(90deg, rgba(10, 9, 8, 0.3), rgba(10, 9, 8, 0.02)),
-    linear-gradient(180deg, rgba(255, 250, 235, 0.04), rgba(10, 9, 8, 0.16));
+  background: linear-gradient(90deg, rgba(10, 9, 8, 0.16), rgba(10, 9, 8, 0));
   content: "";
   inset: 0;
+  pointer-events: none;
   position: absolute;
 }
 
@@ -1447,110 +1498,104 @@ p::selection {
   object-position: center center;
 }
 
+/* Chapter 03 — the villa now fills the whole section as a background plate,
+   with the copy sitting on it. Previously a letterboxed thumbnail floated in a
+   half-empty beige panel. */
 .architecture-chapter {
-  align-items: center;
-  background:
-    linear-gradient(135deg, #f5eee4, #e8dece);
-  color: var(--charcoal);
+  align-content: center;
+  background: #14120f;
+  color: #fffaf1;
   display: grid;
-  gap: clamp(34px, 6vw, 86px);
-  grid-template-columns: minmax(300px, 0.72fr) minmax(0, 1fr);
+  gap: clamp(26px, 3.4vw, 44px);
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: start;
+  min-height: min(94svh, 900px);
 }
 
+.architecture-bg {
+  inset: 0;
+  overflow: hidden;
+  position: absolute;
+  z-index: 0;
+}
+
+/* This plate is a backlit sunset terrace — far brighter than the other chapter
+   images — so it gets pulled down rather than lifted, or the headline sits on
+   blown-out sky. */
+.architecture-bg img {
+  filter: saturate(1.04) contrast(1.06) brightness(0.86);
+  height: 100%;
+  object-fit: cover;
+  object-position: center 48%;
+  width: 100%;
+}
+
+/* Readability scrim, weighted to the left where the copy sits so the villa
+   stays visible on the right. Kept warm and relatively open so 03 reads as
+   daylight — chapter 04 that follows is a deeper, cooler evening, which is what
+   gives the two neighbouring photo chapters a distinct order. */
 .architecture-chapter::before {
   background:
-    radial-gradient(circle at 16% 20%, rgba(237, 122, 37, 0.16), transparent 24%),
-    linear-gradient(180deg, rgba(255, 253, 248, 0.18), rgba(255, 253, 248, 0.34));
+    linear-gradient(96deg, rgba(24, 16, 8, 0.8) 0%, rgba(24, 16, 8, 0.5) 40%, rgba(24, 16, 8, 0.1) 70%, transparent 100%),
+    linear-gradient(180deg, rgba(14, 11, 8, 0.52) 0%, transparent 24%, transparent 62%, rgba(12, 16, 12, 0.72) 100%);
+  z-index: 1;
+}
+
+.architecture-chapter > :not(.architecture-bg) {
+  position: relative;
+  z-index: 2;
 }
 
 .architecture-chapter h2,
 .architecture-chapter p {
-  color: var(--charcoal);
-  text-shadow: none;
+  color: #fffaf1;
+  text-shadow: 0 2px 30px rgba(0, 0, 0, 0.42);
 }
 
 .architecture-chapter .chapter-mark {
-  color: rgba(166, 79, 23, 0.42);
+  color: rgba(255, 233, 199, 0.42);
 }
 
 .architecture-chapter .chapter-label {
-  color: #a64f17;
-}
-
-.architecture-frame {
-  background:
-    radial-gradient(circle at 62% 36%, rgba(255, 253, 248, 0.38), transparent 44%),
-    linear-gradient(135deg, #d9cfbf, #5f5449);
-  align-self: center;
-  box-shadow: 0 46px 110px rgba(23, 33, 43, 0.22);
-  grid-column: 1;
-  height: min(72vh, 660px);
-  left: auto;
-  position: relative;
-  width: 100%;
-  z-index: 2;
-}
-
-.architecture-frame img {
-  object-position: center center;
-}
-
-.architecture-overlap {
-  display: none;
+  color: #f2c277;
 }
 
 .architecture-copy {
-  grid-column: 2;
-  grid-row: 1;
-  max-width: 820px;
-}
-
-.architecture-copy h2 {
   max-width: 760px;
 }
 
-.architecture-copy p {
-  max-width: 540px;
+.architecture-copy h2 {
+  max-width: 17ch;
+}
+
+.architecture-copy > p {
+  color: rgba(255, 250, 241, 0.86);
+  max-width: 52ch;
 }
 
 .architecture-scale {
-  backdrop-filter: blur(18px) saturate(1.18);
-  background:
-    linear-gradient(145deg, rgba(255, 253, 248, 0.78), rgba(255, 247, 232, 0.5)),
-    rgba(255, 255, 255, 0.44);
-  border: 1px solid rgba(237, 122, 37, 0.16);
-  border-radius: 26px;
-  box-shadow:
-    0 26px 80px rgba(23, 33, 43, 0.13),
-    inset 0 1px 0 rgba(255, 255, 255, 0.78);
-  grid-column: 2;
-  margin-top: clamp(24px, 4vw, 42px);
-  max-width: 560px;
+  backdrop-filter: blur(14px) saturate(1.2);
+  background: rgba(16, 14, 11, 0.44);
+  border: 1px solid rgba(242, 194, 119, 0.24);
+  border-radius: 22px;
+  box-shadow: 0 26px 70px rgba(0, 0, 0, 0.34);
+  max-width: 640px;
   overflow: hidden;
-  padding: clamp(18px, 2.2vw, 26px);
+  padding: clamp(16px, 2vw, 24px) clamp(20px, 2.4vw, 30px);
   position: relative;
+  width: 100%;
 }
 
 .architecture-scale::before {
-  background: linear-gradient(180deg, var(--orange), rgba(242, 194, 119, 0.24));
+  background: linear-gradient(180deg, var(--orange), rgba(242, 194, 119, 0.2));
   content: "";
   inset: 0 auto 0 0;
   position: absolute;
-  width: 4px;
-}
-
-.architecture-scale::after {
-  background: radial-gradient(circle, rgba(237, 122, 37, 0.18), transparent 68%);
-  content: "";
-  height: 150px;
-  position: absolute;
-  right: -54px;
-  top: -62px;
-  width: 150px;
+  width: 3px;
 }
 
 .architecture-scale span {
-  color: #a64f17;
+  color: #f2c277;
   display: inline-flex;
   font-size: 12px;
   font-weight: 800;
@@ -1563,8 +1608,9 @@ p::selection {
 .architecture-scale-row {
   align-items: center;
   display: flex;
-  gap: clamp(18px, 3vw, 30px);
-  margin-top: 10px;
+  flex-wrap: wrap;
+  gap: clamp(16px, 2.6vw, 28px);
+  margin-top: 8px;
   position: relative;
   z-index: 1;
 }
@@ -1576,24 +1622,24 @@ p::selection {
 
 .architecture-scale-divider {
   align-self: stretch;
-  background: rgba(166, 79, 23, 0.22);
+  background: rgba(242, 194, 119, 0.26);
   width: 1px;
 }
 
 .architecture-scale strong {
-  color: #2f2b26;
+  color: #fffaf1;
   display: block;
   font-family: var(--font-display);
-  font-size: clamp(46px, 5.4vw, 72px);
+  font-size: clamp(40px, 4.4vw, 62px);
   font-weight: 400;
   line-height: 1;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
 }
 
 .architecture-scale em {
-  color: rgba(36, 35, 33, 0.66);
+  color: rgba(255, 250, 241, 0.68);
   display: block;
-  font-size: 12px;
+  font-size: 11px;
   font-style: normal;
   font-weight: 800;
   letter-spacing: 0;
@@ -1602,16 +1648,14 @@ p::selection {
 }
 
 .architecture-note {
-  border-left: 0;
-  color: rgba(36, 35, 33, 0.64);
+  color: rgba(255, 250, 241, 0.72) !important;
   font-family: var(--font-editorial);
-  font-size: clamp(17px, 1.35vw, 21px);
+  font-size: clamp(17px, 1.3vw, 20px);
   font-weight: 500;
-  grid-column: 2;
-  line-height: 1.32;
-  margin-top: 14px;
-  max-width: 480px;
-  padding-left: clamp(18px, 2.2vw, 26px);
+  line-height: 1.4;
+  margin-top: 18px;
+  max-width: 46ch;
+  padding-left: 18px;
   position: relative;
 }
 
@@ -1626,10 +1670,6 @@ p::selection {
   width: 7px;
 }
 
-.architecture-note span {
-  display: block;
-}
-
 .amenities-chapter {
   align-items: center;
   background:
@@ -1639,10 +1679,12 @@ p::selection {
   grid-template-columns: minmax(0, 0.86fr) minmax(360px, 0.9fr);
 }
 
+/* Picks up exactly where 03's scrim ends, so the two photographic chapters hand
+   off instead of butting into each other. */
 .amenities-chapter::before {
   background:
-    linear-gradient(180deg, rgba(255, 250, 235, 0.015), rgba(7, 7, 6, 0.08)),
-    radial-gradient(circle at 50% 46%, rgba(255, 226, 164, 0.08), transparent 22%);
+    linear-gradient(180deg, rgba(12, 16, 12, 0.72) 0%, rgba(8, 12, 9, 0.34) 18%, rgba(8, 12, 9, 0.3) 74%, rgba(8, 12, 9, 0.7) 100%),
+    linear-gradient(90deg, rgba(8, 11, 8, 0.5), transparent 58%);
 }
 
 .amenities-image {
@@ -1663,19 +1705,21 @@ p::selection {
   max-width: 720px;
 }
 
+/* The amenity list sits directly over foliage, so it needs a real panel behind
+   it rather than a 24% wash — the labels were previously fighting the pool. */
 .amenity-orbit {
   align-self: center;
-  backdrop-filter: blur(8px);
-  background:
-    linear-gradient(145deg, rgba(255, 253, 248, 0.17), rgba(255, 253, 248, 0.08)),
-    rgba(12, 11, 10, 0.24);
+  backdrop-filter: blur(18px) saturate(1.1);
+  background: rgba(9, 12, 10, 0.72);
   border: 1px solid rgba(255, 253, 248, 0.14);
-  border-left: 1px solid rgba(242, 194, 119, 0.28);
+  border-left: 1px solid rgba(242, 194, 119, 0.34);
+  border-radius: 18px;
+  box-shadow: 0 34px 100px rgba(0, 0, 0, 0.4);
   display: grid;
   gap: 0;
   grid-column: 2;
   grid-row: 1 / span 2;
-  padding-left: clamp(18px, 3vw, 34px);
+  padding: 6px clamp(18px, 2vw, 26px) 6px clamp(18px, 3vw, 34px);
   position: relative;
 }
 
@@ -2060,27 +2104,30 @@ p::selection {
 
 .investment-chapter {
   align-items: center;
-  background:
-    linear-gradient(135deg, #182119, #0d110e 62%, #302018);
+  background: #0d110e;
   display: grid;
+  min-height: min(92svh, 880px);
 }
 
+/* Chapter 07 read as dull because the photo sat at 90% opacity under a flat 44%
+   black wash. Now it plays at full strength, with the scrim shaped to fall only
+   where the copy is. */
 .investment-texture {
-  inset: -12% 0;
-  opacity: 0.9;
+  inset: 0;
+  opacity: 1;
   z-index: 0;
 }
 
-@media (min-width: 1081px) {
-  .investment-texture img {
-    object-fit: cover;
-  }
+.investment-texture img {
+  filter: saturate(1.16) contrast(1.1) brightness(1.1);
+  object-fit: cover;
+  object-position: center 58%;
 }
 
 .investment-texture::after {
   background:
-    radial-gradient(circle at 75% 30%, rgba(255, 226, 164, 0.14), transparent 28%),
-    linear-gradient(90deg, rgba(8, 8, 8, 0.44), rgba(8, 8, 8, 0.04));
+    linear-gradient(94deg, rgba(8, 8, 8, 0.76) 0%, rgba(8, 8, 8, 0.46) 34%, rgba(8, 8, 8, 0.08) 64%, transparent 100%),
+    linear-gradient(180deg, rgba(8, 8, 8, 0.42) 0%, transparent 24%, transparent 70%, rgba(8, 8, 8, 0.5) 100%);
 }
 
 .investment-copy {
@@ -2428,6 +2475,14 @@ footer a:hover {
   z-index: 50;
 }
 
+/* A single low bar rather than a tall right-hand stack: the stacked version was
+   ~190px high and sat on top of section copy for most of the scroll. */
+@media (min-width: 681px) {
+  .sticky-actions {
+    grid-auto-flow: column;
+  }
+}
+
 .sticky-actions a {
   align-items: center;
   background: var(--orange);
@@ -2584,26 +2639,66 @@ footer a:hover {
     display: none;
   }
 
+  /* Below 1080px the two-column hero collapses to ~300px of copy with the form
+     card sitting on top of the villa — no villa is actually legible. Everything
+     from tablet down gets the stacked treatment instead: full-width photo first,
+     then the copy and the enquiry form. */
   .hero {
-    min-height: 100svh;
-    padding-bottom: 44px;
+    background: #12100e;
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    min-height: auto;
+    overflow: visible;
+    padding: 0 0 34px;
+  }
+
+  .hero-art {
+    aspect-ratio: 16 / 9;
+    inset: auto;
+    margin-bottom: 22px;
+    order: -1;
+    position: relative;
+    width: 100%;
+  }
+
+  .hero-art img {
+    animation: none;
+    height: 100%;
+    object-fit: cover;
+    object-position: center 56%;
+    transform: none;
+    width: 100%;
+  }
+
+  .hero-art::before {
+    display: none;
+  }
+
+  .hero-art::after {
+    background: linear-gradient(180deg, rgba(18, 16, 14, 0.46) 0%, rgba(18, 16, 14, 0.08) 22%, transparent 58%, #12100e 100%);
+  }
+
+  .hero-veil,
+  .hero-sun,
+  .hero::before,
+  .hero::after {
+    display: none;
   }
 
   .hero-grid {
     align-items: start;
-    gap: 24px;
-    grid-template-columns: minmax(0, 1fr) minmax(310px, 390px);
+    gap: 22px;
+    grid-template-columns: minmax(0, 1fr);
     min-height: auto;
+    padding: 0 var(--page-pad);
   }
 
   .hero-copy-block,
-  .hero-support {
-    grid-column: 1;
-  }
-
+  .hero-support,
   .hero-lead-card {
-    grid-column: 2;
-    grid-row: 1 / span 2;
+    grid-column: auto;
+    grid-row: auto;
   }
 
   .hero h1 {
@@ -2611,10 +2706,26 @@ footer a:hover {
     line-height: 1.08;
   }
 
+  .hero-key-facts span {
+    backdrop-filter: none;
+    background: rgba(255, 253, 248, 0.06);
+    border-color: rgba(255, 253, 248, 0.16);
+  }
+
+  .hero-price-fact {
+    background: linear-gradient(145deg, rgba(224, 112, 24, 0.5), rgba(89, 41, 12, 0.34)) !important;
+    border-color: rgba(242, 194, 119, 0.4) !important;
+  }
+
   .hero-lead-card {
-    max-width: 390px;
-    padding: 20px;
+    backdrop-filter: none;
+    background: linear-gradient(160deg, rgba(255, 253, 248, 0.97), rgba(252, 246, 236, 0.94));
+    display: block;
+    justify-self: start;
     margin-top: 0;
+    max-width: 560px;
+    padding: 22px;
+    width: 100%;
   }
 
   .hero-lead-form {
@@ -2681,26 +2792,6 @@ footer a:hover {
     width: 100%;
   }
 
-  .architecture-frame {
-    height: 44vh;
-    left: auto;
-    position: relative;
-    width: min(520px, 100%);
-  }
-
-  .architecture-copy {
-    grid-column: auto;
-  }
-
-  .architecture-scale {
-    grid-column: auto;
-    width: min(560px, 100%);
-  }
-
-  .architecture-note {
-    grid-column: auto;
-  }
-
   .amenity-orbit {
     justify-self: center;
     width: 100%;
@@ -2736,19 +2827,15 @@ footer a:hover {
     width: 100%;
   }
 
-  .amenities-image,
-  .investment-texture,
   .location-panorama,
   .invitation-image {
-    background:
-      radial-gradient(circle at 60% 40%, rgba(255, 253, 248, 0.14), transparent 42%),
-      linear-gradient(135deg, rgba(18, 16, 14, 0.82), rgba(43, 34, 25, 0.72));
+    aspect-ratio: 16 / 9;
+    background: #1a1713;
     border: 1px solid rgba(255, 253, 248, 0.18);
-    border-radius: 20px;
+    border-radius: 18px;
     bottom: auto;
     box-shadow: 0 28px 80px rgba(0, 0, 0, 0.22);
-    clip-path: inset(0 round 20px);
-    height: min(46vh, 440px);
+    height: auto;
     inset: auto;
     left: auto;
     opacity: 1;
@@ -2815,73 +2902,121 @@ footer a:hover {
     font-size: 18px;
   }
 
+  /* Nav is hidden at this width, so there is room for the label — an unlabelled
+     circle gave the primary CTA no meaning. */
   .header-cta {
+    font-size: 12px;
     min-height: 42px;
-    padding: 0 13px;
+    padding: 0 15px;
   }
 
   .header-cta span {
-    display: none;
+    display: inline;
   }
 
+  /* Phone refinements on top of the shared stacked hero. The whole hero is
+     compressed so the enquiry form is reachable in one short scroll — on a
+     lead-gen page the form is the product, not a footnote. */
   .hero {
-    height: auto;
-    min-height: auto;
-    padding: 86px 14px 102px;
+    padding-bottom: 26px;
   }
 
-  .hero-art img {
-    animation: none;
-    object-fit: cover;
-    object-position: 58% center;
-    transform: none;
-  }
-
-  .hero-art::before {
-    backdrop-filter: none;
-    background: rgba(18, 16, 14, 0.1);
-  }
-
-  .hero-veil {
-    background:
-      radial-gradient(ellipse at 24% 48%, rgba(8, 7, 6, 0.1), transparent 40%),
-      linear-gradient(180deg, rgba(9, 8, 7, 0.28) 0%, rgba(9, 8, 7, 0.02) 22%, rgba(9, 8, 7, 0) 60%, rgba(9, 8, 7, 0.22) 100%);
-  }
-
-  .hero::before {
-    opacity: 0.4;
-  }
-
-  .hero-key-facts span {
-    backdrop-filter: blur(10px) saturate(1.2);
-    background:
-      linear-gradient(145deg, rgba(25, 18, 12, 0.5), rgba(10, 9, 8, 0.38)),
-      rgba(20, 15, 11, 0.32);
-  }
-
-  .hero-price-fact {
-    background: linear-gradient(145deg, rgba(224, 112, 24, 0.62), rgba(89, 41, 12, 0.52)) !important;
-  }
-
-  .hero-sun {
-    display: none;
+  .hero-art {
+    aspect-ratio: 16 / 11;
+    margin-bottom: 14px;
   }
 
   .hero-grid {
     gap: 14px;
-    grid-template-columns: 1fr;
-    min-height: auto;
+    padding: 0 16px;
   }
 
-  .hero-copy-block,
-  .hero-support,
-  .hero-lead-card {
-    grid-column: auto;
-    grid-row: auto;
+  .hero-subhead {
+    font-size: 13px;
+    margin-bottom: 6px;
+  }
+
+  .hero .eyebrow {
+    font-size: 10px;
+    margin-bottom: 8px;
+  }
+
+  .hero h1 {
+    font-size: clamp(29px, 8.6vw, 37px);
+    line-height: 1.1;
+    margin-bottom: 0;
+    max-width: 100%;
+  }
+
+  /* Spec strip: three compact tiles on one row instead of stacked cards that
+     ate half a screen on their own. */
+  .hero-key-facts {
+    display: grid;
+    gap: 7px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin-top: 14px;
+    padding-top: 12px;
+  }
+
+  .hero-key-facts span {
+    border-radius: 12px;
+    gap: 1px;
+    min-height: 0;
+    padding: 9px 8px;
+  }
+
+  .hero-key-facts small {
+    font-size: 8.5px;
+    line-height: 1.2;
+  }
+
+  .hero-key-facts strong {
+    font-size: 17px;
+    line-height: 1.15;
+  }
+
+  .hero-key-facts b {
+    font-size: 8.5px;
+    line-height: 1.2;
+  }
+
+  /* All three approvals on one line — they are the trust signal, and stacking
+     them across two rows made them read as filler. */
+  .hero-trust-badges {
+    display: grid;
+    gap: 6px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin-top: 12px;
+  }
+
+  .hero-trust-badges span {
+    font-size: 8.5px;
+    gap: 4px;
+    min-height: 34px;
+    min-width: 0;
+    padding: 0 5px;
+    white-space: nowrap;
+  }
+
+  /* Without this the flex icon collapses to a sliver at 390px. */
+  .hero-trust-badges svg {
+    flex: 0 0 auto;
+    height: 12px;
+    width: 12px;
   }
 
   .hero-lead-card {
-    display: none;
+    margin-top: 6px;
+    max-width: none;
+    padding: 18px 16px;
+  }
+
+  .hero-lead-card h2 {
+    font-size: 27px;
+  }
+
+  .hero-lead-card > p {
+    font-size: 14px;
   }
 
   .hero-trust-badges span:hover,
@@ -2999,10 +3134,110 @@ footer a:hover {
     display: none;
   }
 
+  /* Tighter chapters. The page was 17 phone-screens long; ad traffic does not
+     scroll that far, so every section is compressed toward one screen. */
   .journey-section {
     box-shadow: inset 0 26px 26px -26px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
     min-height: auto;
-    padding: 78px 18px 88px;
+    padding: 78px 18px 72px;
+  }
+
+  /* The three full-bleed chapters keep their background treatment and stay
+     vertically centred on it. */
+  .architecture-chapter,
+  .amenities-chapter,
+  .investment-chapter {
+    justify-content: center;
+  }
+
+  .journey-section h2 {
+    font-size: clamp(30px, 8.6vw, 40px);
+    line-height: 1.06;
+    margin-bottom: 16px;
+  }
+
+  .journey-section p {
+    font-size: 15px;
+    line-height: 1.5;
+  }
+
+  .chapter-mark {
+    font-size: 34px;
+    margin-bottom: 6px;
+  }
+
+  .chapter-label {
+    font-size: 14px;
+    margin-bottom: 10px;
+  }
+
+  /* Chapters 03, 04 and 07 keep the desktop's full-bleed photographic treatment
+     on mobile instead of collapsing into small letterboxed cards. */
+  .architecture-chapter,
+  .amenities-chapter,
+  .investment-chapter {
+    min-height: 82svh;
+    padding-bottom: 64px;
+    padding-top: 84px;
+  }
+
+  .architecture-bg img {
+    object-position: center 50%;
+  }
+
+  .architecture-chapter::before {
+    background:
+      linear-gradient(180deg, rgba(10, 9, 7, 0.72) 0%, rgba(10, 9, 7, 0.5) 34%, rgba(10, 9, 7, 0.62) 70%, rgba(10, 9, 7, 0.86) 100%);
+  }
+
+  .amenities-image,
+  .investment-texture {
+    aspect-ratio: auto;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    height: auto;
+    inset: 0;
+    margin-bottom: 0;
+    position: absolute;
+    width: auto;
+  }
+
+  .investment-texture::after {
+    background: linear-gradient(180deg, rgba(8, 8, 8, 0.66) 0%, rgba(8, 8, 8, 0.42) 36%, rgba(8, 8, 8, 0.58) 72%, rgba(8, 8, 8, 0.84) 100%);
+  }
+
+  .architecture-scale {
+    max-width: none;
+  }
+
+  /* Three stats never fit on one flex line at phone widths — the last one used
+     to wrap under a stranded divider. Grid keeps them even. */
+  .architecture-scale-row {
+    display: grid;
+    gap: 0;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .architecture-scale-divider {
+    display: none;
+  }
+
+  .architecture-scale-stat + .architecture-scale-stat {
+    border-left: 1px solid rgba(242, 194, 119, 0.26);
+    padding-left: clamp(10px, 3vw, 16px);
+  }
+
+  .architecture-scale strong {
+    font-size: clamp(30px, 9vw, 44px);
+  }
+
+  .architecture-scale em {
+    font-size: 10px;
+    white-space: normal;
   }
 
   .journey-section::after {
@@ -3035,6 +3270,14 @@ footer a:hover {
     display: none;
   }
 
+  /* Phones get the 960px plate — a third of the bytes, identical on screen. */
+  .arrival-chapter {
+    background:
+      linear-gradient(90deg, rgba(9, 8, 7, 0.58), rgba(9, 8, 7, 0.12) 58%, rgba(9, 8, 7, 0.2)),
+      url("/assets/natures-edge-editorial-arrival-960.webp") center center / cover no-repeat,
+      #11100e;
+  }
+
   .journey-image {
     inset: 0;
     opacity: 0.48;
@@ -3046,34 +3289,148 @@ footer a:hover {
     gap: 10px;
   }
 
+  /* MOBILE IS THE AD CHANNEL — every chapter is photo-led here. These images used
+     to render as small 16:10 cards, leaving most of the phone experience as
+     screens of dark text with no villa in sight.
+
+     Split layout rather than full-bleed: a 16:9 image can only be shown on a tall
+     phone screen by cropping it to a narrow vertical strip, which loses the villa
+     row entirely. So the photo runs edge to edge at its true aspect ratio across
+     the top of the chapter, and the copy sits beneath it. Nothing is cropped away
+     and the text stays fully legible. */
+  /* Two villa layers per chapter, so no part of the screen is ever flat black:
+     (1) a full-width photo band across the top at its true aspect ratio —
+         nothing cropped away, the villa reads clearly;
+     (2) a second villa shot as the section's own background behind the copy,
+         darkened hard so the type stays legible.
+     Before this the area under the band was empty colour. */
+  .lifestyle-chapter {
+    background:
+      linear-gradient(180deg, rgba(14, 13, 10, 0.5) 0%, rgba(14, 13, 10, 0.72) 55%, rgba(14, 13, 10, 0.82) 100%),
+      url("/assets/natures-edge-editorial-aerial-960.webp") center 40% / cover no-repeat,
+      #100e0c;
+  }
+
+  .community-chapter {
+    background:
+      linear-gradient(180deg, rgba(13, 17, 12, 0.5) 0%, rgba(13, 17, 12, 0.72) 55%, rgba(13, 17, 12, 0.82) 100%),
+      url("/assets/natures-edge-editorial-garden-960.webp") center 45% / cover no-repeat,
+      #101410;
+  }
+
+  .location-chapter {
+    background:
+      linear-gradient(180deg, rgba(12, 13, 11, 0.48) 0%, rgba(12, 13, 11, 0.7) 55%, rgba(12, 13, 11, 0.82) 100%),
+      url("/assets/natures-edge-editorial-villa-960.webp") center 45% / cover no-repeat,
+      #100e0c;
+  }
+
+  .ownership-chapter {
+    background:
+      linear-gradient(180deg, rgba(16, 15, 11, 0.5) 0%, rgba(16, 15, 11, 0.72) 55%, rgba(16, 15, 11, 0.82) 100%),
+      url("/assets/natures-edge-editorial-clubhouse-960.webp") center 45% / cover no-repeat,
+      #14120e;
+  }
+
+  .invitation-chapter {
+    background:
+      linear-gradient(180deg, rgba(13, 12, 10, 0.5) 0%, rgba(13, 12, 10, 0.74) 55%, rgba(13, 12, 10, 0.86) 100%),
+      url("/assets/natures-edge-editorial-garden-960.webp") center 50% / cover no-repeat,
+      #100e0c;
+  }
+
   .lifestyle-visual,
-  .architecture-frame,
-  .amenities-image,
   .community-image,
-  .investment-texture,
   .location-panorama,
   .ownership-image,
   .invitation-image {
-    background:
-      radial-gradient(circle at 60% 40%, rgba(255, 253, 248, 0.14), transparent 42%),
-      linear-gradient(135deg, rgba(18, 16, 14, 0.82), rgba(43, 34, 25, 0.72));
-    border: 1px solid rgba(255, 253, 248, 0.16);
-    border-radius: 20px;
-    bottom: auto;
-    box-shadow: 0 22px 60px rgba(0, 0, 0, 0.26);
-    clip-path: inset(0 round 20px);
+    aspect-ratio: 16 / 9;
+    background: #1a1713;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
     display: block;
-    height: min(68vw, 300px);
+    height: auto;
     inset: auto;
-    left: auto;
-    margin-bottom: 22px;
+    margin: -78px -18px 26px;
     opacity: 1;
+    order: -1;
     overflow: hidden;
     position: relative;
-    right: auto;
-    top: auto;
-    width: 100%;
+    width: calc(100% + 36px);
     z-index: 0;
+  }
+
+  .lifestyle-visual img,
+  .community-image img,
+  .location-panorama img,
+  .ownership-image img,
+  .invitation-image img {
+    height: 100%;
+    object-fit: cover;
+    object-position: center 52%;
+    width: 100%;
+  }
+
+  /* Top fade so the floating header pill stays readable over the band, and a
+     bottom fade so the band melts into the section behind it. */
+  .lifestyle-visual::after,
+  .community-image::after,
+  .location-panorama::after,
+  .ownership-image::after,
+  .invitation-image::after {
+    background: linear-gradient(
+      180deg,
+      rgba(12, 11, 9, 0.62) 0%,
+      rgba(12, 11, 9, 0.1) 20%,
+      transparent 62%,
+      rgba(14, 13, 10, 0.55) 100%
+    );
+  }
+
+  /* Chapter 06 was the flattest screen on the phone: a beige panel with no
+     photograph at all. It now sits on the aerial like every other chapter, so
+     its type has to flip to light. */
+  .location-chapter h2,
+  .location-chapter p,
+  .location-chapter .chapter-mark {
+    color: #fffaf1;
+  }
+
+  .location-chapter .chapter-mark {
+    color: rgba(255, 222, 157, 0.78);
+  }
+
+  .location-chapter .chapter-label {
+    color: #ffe0a0;
+  }
+
+  /* Opaque enough to be independent of what is behind it — at 52% the card
+     over the bright pavement washed out while the other two stayed dark. */
+  .route-line {
+    backdrop-filter: blur(12px);
+    background: rgba(14, 12, 10, 0.78);
+    border: 1px solid rgba(255, 253, 248, 0.12);
+    border-radius: 14px;
+    margin-bottom: 8px;
+    padding: 14px 16px;
+  }
+
+  .route-line span {
+    color: #f2c277;
+  }
+
+  .route-line em,
+  .route-line p {
+    color: rgba(255, 250, 241, 0.82);
+  }
+
+  /* The gallery chapter had no imagery behind the rails either. */
+  .gallery-chapter {
+    background:
+      linear-gradient(180deg, rgba(12, 11, 9, 0.72) 0%, rgba(12, 11, 9, 0.62) 46%, rgba(12, 11, 9, 0.86) 100%),
+      url("/assets/natures-edge-editorial-villa-960.webp") center top / cover no-repeat,
+      #100e0c;
   }
 
   .amenities-heading,
@@ -3292,6 +3649,265 @@ footer a:hover {
   }
 }
 
+/* ===========================================================================
+   MOBILE — swipe carousels, compressed lists, premium controls.
+   Mobile carries the paid traffic, so this block deliberately overrides the
+   desktop rhythm rather than inheriting a scaled-down version of it.
+   =========================================================================== */
+@media (max-width: 680px) {
+  /* --- Gallery + floor plans become swipeable rails ---------------------
+     These two grids alone were 2.9 screens of vertical scroll. As snap rails
+     they take about one, and swiping is what people expect of a gallery on a
+     phone. Pure CSS — no carousel library, no JS. */
+  .photo-grid,
+  .floorplan-grid {
+    display: grid;
+    gap: 12px;
+    grid-auto-columns: 82%;
+    grid-auto-flow: column;
+    grid-template-columns: none;
+    margin: 0 -18px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    padding: 2px 18px 14px;
+    scroll-padding-left: 18px;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .photo-grid::-webkit-scrollbar,
+  .floorplan-grid::-webkit-scrollbar {
+    display: none;
+  }
+
+  .photo-grid,
+  .floorplan-grid {
+    scrollbar-width: none;
+  }
+
+  .photo-tile,
+  .floorplan-card {
+    aspect-ratio: auto;
+    scroll-snap-align: start;
+  }
+
+  .photo-tile {
+    aspect-ratio: 4 / 3;
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  .floorplan-grid {
+    grid-auto-columns: 88%;
+  }
+
+  /* "300 sq. yd." was wrapping mid-unit against the spec text beside it. */
+  .floorplan-caption {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+    padding: 14px 16px;
+  }
+
+  .floorplan-caption strong {
+    font-size: 20px;
+    white-space: nowrap;
+  }
+
+  .floorplan-caption span {
+    text-align: left;
+  }
+
+  .gallery-cta {
+    margin-top: 4px;
+  }
+
+  /* A hint that the rail scrolls. */
+  .gallery-heading::after,
+  .floorplan-heading::after {
+    color: rgba(255, 222, 157, 0.72);
+    content: "Swipe to browse →";
+    display: block;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    margin-top: 10px;
+    text-transform: uppercase;
+  }
+
+  /* --- Compressed lists ------------------------------------------------- */
+  .timeline-line,
+  .amenity-point,
+  .community-line,
+  .route-line,
+  .ledger-line {
+    padding-bottom: 13px;
+    padding-top: 13px;
+  }
+
+  .amenity-point span,
+  .community-line span {
+    font-size: 22px;
+  }
+
+  .amenity-point strong {
+    font-size: 19px;
+  }
+
+  .amenity-point em,
+  .community-line p,
+  .timeline-line span,
+  .route-line p {
+    font-size: 14px;
+    line-height: 1.45;
+  }
+
+  .timeline-line strong {
+    font-size: 26px;
+  }
+
+  .investment-copy strong {
+    font-size: clamp(64px, 20vw, 96px);
+  }
+
+  .investment-copy p {
+    margin-top: 22px;
+  }
+
+  .ownership-seal,
+  .gallery-lead {
+    margin-top: 20px;
+  }
+
+  /* --- Premium, modern controls ----------------------------------------
+     Full-width pill buttons with real elevation and a proper pressed state.
+     Tap targets are 54px so nothing needs aiming for. */
+  .header-cta,
+  .primary-btn,
+  .secondary-btn,
+  .lead-form button,
+  .pricing-cta,
+  .footer-tour-cta,
+  .exit-form button,
+  .hero-primary-submit,
+  .hero-secondary-action {
+    border-radius: 999px;
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: 0.01em;
+  }
+
+  .lead-form button,
+  .pricing-cta,
+  .hero-primary-submit,
+  .exit-form button {
+    box-shadow: 0 12px 30px rgba(237, 122, 37, 0.34);
+    min-height: 56px;
+  }
+
+  .secondary-btn,
+  .footer-tour-cta {
+    min-height: 54px;
+  }
+
+  .lead-form button:active,
+  .pricing-cta:active,
+  .hero-primary-submit:active,
+  .secondary-btn:active,
+  .footer-tour-cta:active,
+  .exit-form button:active,
+  .header-cta:active {
+    box-shadow: 0 6px 16px rgba(237, 122, 37, 0.28);
+    transform: translateY(1px) scale(0.988);
+  }
+
+  /* Inputs: larger, softer, with a clear focus ring. 16px font size is what
+     stops iOS Safari zooming the page when a field is tapped. */
+  .hero-lead-form input,
+  .lead-form input,
+  .exit-form input {
+    border-radius: 14px;
+    font-size: 16px;
+    min-height: 54px;
+  }
+
+  .hero-lead-form input:focus,
+  .lead-form input:focus,
+  .exit-form input:focus {
+    box-shadow: 0 0 0 3px rgba(237, 122, 37, 0.18);
+    outline: none;
+  }
+
+  /* --- Closing form matches the hero card ------------------------------
+     It was dark-on-dark: charcoal inputs on a charcoal section, which is the
+     worst possible contrast for the page's primary conversion point. */
+  .lead-form {
+    background: linear-gradient(160deg, rgba(255, 253, 248, 0.97), rgba(252, 246, 236, 0.94));
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    box-shadow: 0 26px 70px rgba(0, 0, 0, 0.34);
+  }
+
+  .lead-form label {
+    color: #6f675d;
+  }
+
+  .lead-form label span {
+    color: #938a7d;
+  }
+
+  .lead-form input {
+    background: #fff;
+    border: 1px solid rgba(36, 35, 33, 0.16);
+    color: var(--charcoal);
+  }
+
+  .lead-form input::placeholder {
+    color: #a49a8c;
+  }
+
+  .lead-form input:focus {
+    background: #fff;
+    border-color: var(--orange);
+    box-shadow: 0 0 0 3px rgba(237, 122, 37, 0.18);
+  }
+
+  .lead-form p {
+    color: #6f675d;
+  }
+
+  .lead-form .success-note {
+    color: #a64f17;
+  }
+
+  .lead-form-label {
+    color: #f2c277;
+  }
+
+  /* --- Sticky action bar ------------------------------------------------ */
+  .sticky-actions {
+    background: rgba(14, 12, 10, 0.82);
+    -webkit-backdrop-filter: blur(22px) saturate(1.3);
+    backdrop-filter: blur(22px) saturate(1.3);
+    border-top: 1px solid rgba(242, 194, 119, 0.22);
+    gap: 8px;
+    padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
+  }
+
+  .sticky-actions a {
+    border-radius: 16px;
+    min-height: 56px;
+  }
+
+  .sticky-actions a:active {
+    transform: scale(0.97);
+  }
+
+  .sticky-actions span {
+    font-size: 10.5px;
+    font-weight: 800;
+  }
+}
+
 @media (max-width: 480px) {
   :root {
     --page-pad: 16px;
@@ -3319,21 +3935,13 @@ footer a:hover {
     width: 16px;
   }
 
+  /* The photo runs to the top edge on phones; no leading gap. */
   .hero {
-    padding-top: 80px;
+    padding-top: 0;
   }
 
   .hero h1 {
-    font-size: clamp(30px, 9.4vw, 40px);
-    max-width: 13ch;
-  }
-
-  .hero-key-facts {
-    grid-template-columns: 1fr;
-  }
-
-  .hero-key-facts span {
-    min-height: 74px;
+    font-size: clamp(27px, 8.4vw, 34px);
   }
 
   .journey-section {
@@ -3359,9 +3967,11 @@ footer a:hover {
   }
 }
 
+/* The mobile hero now scrolls as a stack, so a short viewport no longer needs
+   content stripped out to fit — only tightened. */
 @media (max-width: 680px) and (max-height: 760px) {
   .hero {
-    padding-top: 76px;
+    padding-top: 64px;
   }
 
   .hero-subhead {
@@ -3372,28 +3982,14 @@ footer a:hover {
     margin-bottom: 7px;
   }
 
-  .hero h1 {
-    font-size: clamp(36px, 11.2vw, 49px);
-  }
-
-  .hero-trust-badges {
-    display: none;
+  .hero-art {
+    aspect-ratio: 16 / 11;
   }
 
   .hero-key-facts {
-    display: grid;
     gap: 6px;
     margin-top: 12px;
     padding-top: 10px;
-  }
-
-  .hero-key-facts span {
-    min-height: 42px;
-    padding: 8px 10px;
-  }
-
-  .hero-key-facts strong {
-    font-size: 16px;
   }
 }
 
