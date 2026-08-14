@@ -183,6 +183,8 @@ function ImageReveal({ children, className = "", style }) {
 
 export default function HomePage() {
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [successOpen, setSuccessOpen] = useState(false);
   const [exitOpen, setExitOpen] = useState(false);
   const [exitSeen, setExitSeen] = useState(false);
   const reduceMotion = useReducedMotion();
@@ -218,6 +220,32 @@ export default function HomePage() {
       document.removeEventListener("visibilitychange", showMobileOffer);
     };
   }, [exitSeen, submitted]);
+
+  useEffect(() => {
+    if (!successOpen) return undefined;
+
+    const timeout = window.setTimeout(() => setSuccessOpen(false), 5200);
+    return () => window.clearTimeout(timeout);
+  }, [successOpen]);
+
+  const handleLeadSubmit = async (event, formSource, afterSuccess) => {
+    event.preventDefault();
+    if (submitting) return;
+
+    const form = event.currentTarget;
+    setSubmitting(true);
+    try {
+      await sendLeadToCrm(form, formSource);
+      setSubmitted(true);
+      setSuccessOpen(true);
+      form.reset();
+      afterSuccess?.();
+    } catch (error) {
+      console.error("CRM online lead sync failed.", error);
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <main>
@@ -269,14 +297,19 @@ export default function HomePage() {
             </motion.h1>
             <motion.div className="hero-key-facts" variants={fadeUp}>
               <span className="hero-price-fact">
-                <small>Gated community</small>
-                <strong>13.6 acres</strong>
-                <b>The rest is forest</b>
+                <small>Villa starts from</small>
+                <strong>5 Cr</strong>
+                <b>Private villa pricing</b>
               </span>
               <span>
                 <small>Villa collection</small>
                 <strong>121 homes</strong>
                 <b>Private villa community</b>
+              </span>
+              <span>
+                <small>Gated community</small>
+                <strong>13.6 acres</strong>
+                <b>The rest is forest</b>
               </span>
               <span>
                 <small>Villa formats</small>
@@ -311,16 +344,7 @@ export default function HomePage() {
             <p>Get the villa details and available private visit windows.</p>
             <form
               className="hero-lead-form"
-              onSubmit={async (event) => {
-                event.preventDefault();
-                try {
-                  await sendLeadToCrm(event.currentTarget, "hero form");
-                  setSubmitted(true);
-                  event.currentTarget.reset();
-                } catch (error) {
-                  console.error("CRM online lead sync failed.", error);
-                }
-              }}
+              onSubmit={(event) => handleLeadSubmit(event, "hero form")}
             >
               <label>
                 <input type="text" name="hero-name" placeholder=" " autoComplete="name" required />
@@ -334,8 +358,8 @@ export default function HomePage() {
                 <input type="email" name="hero-email" placeholder=" " autoComplete="email" inputMode="email" />
                 <span>Email Address (optional)</span>
               </label>
-              <motion.button className="hero-primary-submit" type="submit" whileHover={reduceMotion ? undefined : magneticHover} whileTap={{ scale: 0.98 }}>
-                Request Villa Details
+              <motion.button className="hero-primary-submit" type="submit" disabled={submitting} whileHover={reduceMotion ? undefined : magneticHover} whileTap={{ scale: 0.98 }}>
+                {submitting ? "Sending..." : "Request Villa Details"}
                 <ChevronRight size={18} />
               </motion.button>
               <motion.a className="hero-secondary-action" href="#lead" whileHover={reduceMotion ? undefined : magneticHover} whileTap={{ scale: 0.98 }}>
@@ -658,16 +682,7 @@ export default function HomePage() {
           <span className="lead-form-label">Private appointment desk</span>
           <form
             className="lead-form"
-            onSubmit={async (event) => {
-              event.preventDefault();
-              try {
-                await sendLeadToCrm(event.currentTarget, "appointment form");
-                setSubmitted(true);
-                event.currentTarget.reset();
-              } catch (error) {
-                console.error("CRM online lead sync failed.", error);
-              }
-            }}
+            onSubmit={(event) => handleLeadSubmit(event, "appointment form")}
           >
             <label>
               Full name
@@ -681,8 +696,8 @@ export default function HomePage() {
               Email address <span>optional</span>
               <input type="email" name="email" placeholder="you@example.com" autoComplete="email" inputMode="email" />
             </label>
-            <motion.button type="submit" whileHover={reduceMotion ? undefined : magneticHover} whileTap={{ scale: 0.98 }}>
-              Schedule Private Walkthrough
+            <motion.button type="submit" disabled={submitting} whileHover={reduceMotion ? undefined : magneticHover} whileTap={{ scale: 0.98 }}>
+              {submitting ? "Sending..." : "Schedule Private Walkthrough"}
               <ChevronRight size={18} />
             </motion.button>
             {submitted ? (
@@ -728,6 +743,28 @@ export default function HomePage() {
       </div>
 
       <AnimatePresence>
+        {successOpen ? (
+          <motion.div
+            className="lead-success-popup"
+            role="status"
+            aria-live="polite"
+            initial={{ opacity: 0, y: 22, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 18, scale: 0.96 }}
+            transition={{ duration: reduceMotion ? 0.01 : 0.3, ease }}
+          >
+            <div>
+              <strong>Request received</strong>
+              <span>Thank you. We have your details and our team will contact you shortly.</span>
+            </div>
+            <button type="button" aria-label="Close success message" onClick={() => setSuccessOpen(false)}>
+              <X size={16} />
+            </button>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+
+      <AnimatePresence>
         {exitOpen ? (
         <motion.div
           className="exit-overlay"
@@ -760,22 +797,12 @@ export default function HomePage() {
               <p>Share your number and we&apos;ll send project details and visit slots as you browse.</p>
               <form
                 className="exit-form"
-                onSubmit={async (event) => {
-                  event.preventDefault();
-                  try {
-                    await sendLeadToCrm(event.currentTarget, "exit form");
-                    setSubmitted(true);
-                    setExitOpen(false);
-                    event.currentTarget.reset();
-                  } catch (error) {
-                    console.error("CRM online lead sync failed.", error);
-                  }
-                }}
+                onSubmit={(event) => handleLeadSubmit(event, "exit form", () => setExitOpen(false))}
               >
                 <input type="text" name="exit-name" placeholder="Full name" autoComplete="name" />
                 <input type="tel" name="exit-phone" placeholder="Mobile number" autoComplete="tel" inputMode="tel" />
-                <motion.button type="submit" whileHover={reduceMotion ? undefined : magneticHover} whileTap={{ scale: 0.98 }}>
-                  Send Villa Details
+                <motion.button type="submit" disabled={submitting} whileHover={reduceMotion ? undefined : magneticHover} whileTap={{ scale: 0.98 }}>
+                  {submitting ? "Sending..." : "Send Villa Details"}
                   <ChevronRight size={17} />
                 </motion.button>
               </form>
