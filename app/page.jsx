@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
+import { trackCallClick, trackLead, trackWhatsappClick } from "./gtag";
 import {
   ArrowDownToLine,
   BadgeCheck,
@@ -233,6 +234,10 @@ export default function HomePage() {
     const form = event.currentTarget;
     try {
       await sendLeadToCrm(form, formSource);
+      // Only after the CRM has accepted the lead — reporting on submit instead
+      // would count failed posts as conversions and quietly inflate the numbers
+      // Google optimises the campaign against.
+      trackLead(formSource);
       setSubmitted(true);
       setSuccessOpen(true);
       form.reset();
@@ -716,7 +721,7 @@ export default function HomePage() {
       </footer>
 
       <div className="sticky-actions" aria-label="Quick enquiry actions">
-        <motion.a href="tel:+919642439988" aria-label="Request a call" whileHover={reduceMotion ? undefined : magneticHover} whileTap={{ scale: 0.98 }}>
+        <motion.a href="tel:+919642439988" aria-label="Request a call" onClick={trackCallClick} whileHover={reduceMotion ? undefined : magneticHover} whileTap={{ scale: 0.98 }}>
           <Phone size={20} />
           <span>Call</span>
         </motion.a>
@@ -725,6 +730,7 @@ export default function HomePage() {
           target="_blank"
           rel="noreferrer"
           aria-label="Send WhatsApp enquiry"
+          onClick={trackWhatsappClick}
           whileHover={reduceMotion ? undefined : magneticHover}
           whileTap={{ scale: 0.98 }}
         >
