@@ -16,8 +16,8 @@
 
 export const GOOGLE_ADS_ID = "AW-18369369185";
 
-/** Conversion label for a submitted lead form. See the note above. */
-export const LEAD_CONVERSION_LABEL = "";
+/** Conversion label for a submitted lead form — Ads action "Submit lead form". */
+export const LEAD_CONVERSION_LABEL = "h6WGCKX2leIcEOGombdE";
 
 /** Optional: separate label for phone-call clicks. Leave blank to skip. */
 export const CALL_CONVERSION_LABEL = "";
