@@ -92,27 +92,68 @@ const locationNotes = [
   ["Srisailam Highway", "A connected address with nature at its edge", "Tukkuguda"],
 ];
 
-async function sendLeadToCrm(form, formSource) {
+// ---- Lead validation -------------------------------------------------------
+// `type="tel"` performs no format checking whatsoever — the browser happily
+// accepts "abc", a single digit, or punctuation — which is how unusable numbers
+// were reaching the CRM. Everything below is checked before anything is sent.
+
+const NAME_RE = /^[\p{L}][\p{L}\s.'-]*$/u;
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i;
+
+/** Strips formatting and the +91 / 91 / 0 prefixes people type out of habit. */
+function normalisePhone(raw) {
+  const digits = String(raw || "").replace(/\D/g, "");
+  if (digits.length === 12 && digits.startsWith("91")) return digits.slice(2);
+  if (digits.length === 11 && digits.startsWith("0")) return digits.slice(1);
+  return digits;
+}
+
+function readLeadFields(form) {
   const formData = new FormData(form);
-  const getValue = (...names) => {
+  const pick = (...names) => {
     for (const name of names) {
       const value = formData.get(name);
       if (typeof value === "string" && value.trim()) return value.trim();
     }
-    for (const [fieldName, value] of formData.entries()) {
-      if (names.some((name) => fieldName === name || fieldName.endsWith(`-${name}`)) && typeof value === "string" && value.trim()) {
-        return value.trim();
-      }
-    }
     return "";
   };
+  return {
+    name: pick("hero-name", "name", "exit-name"),
+    phone: pick("hero-mobile", "phone", "exit-phone"),
+    email: pick("hero-email", "email"),
+  };
+}
 
+function validateLead(fields) {
+  const errors = {};
+  const name = fields.name.trim();
+  const phone = normalisePhone(fields.phone);
+  const email = fields.email.trim();
+
+  const letters = (name.match(/\p{L}/gu) || []).length;
+  if (!name) errors.name = "Please enter your name.";
+  else if (!NAME_RE.test(name)) errors.name = "Name should contain letters only.";
+  else if (letters < 2) errors.name = "Please enter your full name.";
+
+  if (!phone) errors.phone = "Please enter your mobile number.";
+  else if (phone.length !== 10) errors.phone = "Enter a 10-digit mobile number.";
+  else if (!/^[6-9]/.test(phone)) errors.phone = "Mobile numbers start with 6, 7, 8 or 9.";
+  else if (/^(\d)\1{9}$/.test(phone)) errors.phone = "Please enter a real mobile number.";
+
+  // Email stays optional, but a typo'd one is worse than none — a lead we cannot
+  // reach looks identical to a lead we simply have not contacted yet.
+  if (email && !EMAIL_RE.test(email)) errors.email = "Enter a valid email, or leave it blank.";
+
+  return { errors, values: { name, phone, email } };
+}
+
+async function sendLeadToCrm(values, formSource) {
   const payload = {
     company: CRM_COMPANY,
     project: CRM_PROJECT,
-    name: getValue("hero-name", "name", "exit-name"),
-    phone: getValue("hero-mobile", "phone", "exit-phone"),
-    email: getValue("hero-email", "email"),
+    name: values.name,
+    phone: values.phone,
+    email: values.email,
     message: `Lead submitted from ${formSource} on Signature Nature's Edge.`,
     source: CRM_SOURCE,
   };
@@ -185,6 +226,11 @@ function ImageReveal({ children, className = "", style }) {
 export default function HomePage() {
   const [submitted, setSubmitted] = useState(false);
   const [successOpen, setSuccessOpen] = useState(false);
+  const [formErrors, setFormErrors] = useState({});
+  const [sending, setSending] = useState(false);
+  const heroErrors = formErrors["hero form"] || {};
+  const apptErrors = formErrors["appointment form"] || {};
+  const exitErrors = formErrors["exit form"] || {};
   const [exitOpen, setExitOpen] = useState(false);
   const [exitSeen, setExitSeen] = useState(false);
   const reduceMotion = useReducedMotion();
@@ -230,10 +276,23 @@ export default function HomePage() {
 
   const handleLeadSubmit = async (event, formSource, afterSuccess) => {
     event.preventDefault();
+    if (sending) return; // guard against double-taps on slow mobile connections
 
     const form = event.currentTarget;
+    const { errors, values } = validateLead(readLeadFields(form));
+
+    if (Object.keys(errors).length > 0) {
+      setFormErrors((prev) => ({ ...prev, [formSource]: errors }));
+      // Send the user straight to the first problem rather than making them hunt.
+      const firstBad = ["name", "phone", "email"].find((key) => errors[key]);
+      form.querySelector(`[data-field="${firstBad}"]`)?.focus();
+      return;
+    }
+
+    setFormErrors((prev) => ({ ...prev, [formSource]: {} }));
+    setSending(true);
     try {
-      await sendLeadToCrm(form, formSource);
+      await sendLeadToCrm(values, formSource);
       // Only after the CRM has accepted the lead — reporting on submit instead
       // would count failed posts as conversions and quietly inflate the numbers
       // Google optimises the campaign against.
@@ -244,6 +303,14 @@ export default function HomePage() {
       afterSuccess?.();
     } catch (error) {
       console.error("CRM online lead sync failed.", error);
+      // Previously this failed silently: the form just sat there and the visitor
+      // had no idea their enquiry never left the page.
+      setFormErrors((prev) => ({
+        ...prev,
+        [formSource]: { submit: "Could not send just now. Please try again, or call us." },
+      }));
+    } finally {
+      setSending(false);
     }
   };
 
@@ -344,20 +411,25 @@ export default function HomePage() {
             <p>Get the villa details and available private visit windows.</p>
             <form
               className="hero-lead-form"
+              data-sending={sending}
               onSubmit={(event) => handleLeadSubmit(event, "hero form")}
             >
               <label>
-                <input type="text" name="hero-name" placeholder=" " autoComplete="name" required />
+                <input type="text" name="hero-name" data-field="name" placeholder=" " autoComplete="name" maxLength={60} aria-invalid={Boolean(heroErrors.name)} required />
                 <span>Full Name</span>
               </label>
+              {heroErrors.name ? <em className="field-error">{heroErrors.name}</em> : null}
               <label>
-                <input type="tel" name="hero-mobile" placeholder=" " autoComplete="tel" inputMode="tel" required />
+                <input type="tel" name="hero-mobile" data-field="phone" placeholder=" " autoComplete="tel" inputMode="numeric" maxLength={15} aria-invalid={Boolean(heroErrors.phone)} required />
                 <span>Mobile Number</span>
               </label>
+              {heroErrors.phone ? <em className="field-error">{heroErrors.phone}</em> : null}
               <label className="hero-email-field">
-                <input type="email" name="hero-email" placeholder=" " autoComplete="email" inputMode="email" />
+                <input type="email" name="hero-email" data-field="email" placeholder=" " autoComplete="email" inputMode="email" maxLength={80} aria-invalid={Boolean(heroErrors.email)} />
                 <span>Email Address (optional)</span>
               </label>
+              {heroErrors.email ? <em className="field-error">{heroErrors.email}</em> : null}
+              {heroErrors.submit ? <em className="field-error field-error-submit">{heroErrors.submit}</em> : null}
               <motion.button className="hero-primary-submit" type="submit" whileHover={reduceMotion ? undefined : magneticHover} whileTap={{ scale: 0.98 }}>
                 Request Villa Details
                 <ChevronRight size={18} />
@@ -682,20 +754,25 @@ export default function HomePage() {
           <span className="lead-form-label">Private appointment desk</span>
           <form
             className="lead-form"
+            data-sending={sending}
             onSubmit={(event) => handleLeadSubmit(event, "appointment form")}
           >
             <label>
               Full name
-              <input type="text" name="name" placeholder="Your name" autoComplete="name" required />
+              <input type="text" name="name" data-field="name" placeholder="Your name" autoComplete="name" maxLength={60} aria-invalid={Boolean(apptErrors.name)} required />
             </label>
+            {apptErrors.name ? <em className="field-error">{apptErrors.name}</em> : null}
             <label>
               Phone number
-              <input type="tel" name="phone" placeholder="+91" autoComplete="tel" inputMode="tel" required />
+              <input type="tel" name="phone" data-field="phone" placeholder="10-digit mobile number" autoComplete="tel" inputMode="numeric" maxLength={15} aria-invalid={Boolean(apptErrors.phone)} required />
             </label>
+            {apptErrors.phone ? <em className="field-error">{apptErrors.phone}</em> : null}
             <label>
               Email address <span>optional</span>
-              <input type="email" name="email" placeholder="you@example.com" autoComplete="email" inputMode="email" />
+              <input type="email" name="email" data-field="email" placeholder="you@example.com" autoComplete="email" inputMode="email" maxLength={80} aria-invalid={Boolean(apptErrors.email)} />
             </label>
+            {apptErrors.email ? <em className="field-error">{apptErrors.email}</em> : null}
+            {apptErrors.submit ? <em className="field-error field-error-submit">{apptErrors.submit}</em> : null}
             <motion.button type="submit" whileHover={reduceMotion ? undefined : magneticHover} whileTap={{ scale: 0.98 }}>
               Schedule Private Walkthrough
               <ChevronRight size={18} />
@@ -798,10 +875,14 @@ export default function HomePage() {
               <p>Share your number and we&apos;ll send project details and visit slots as you browse.</p>
               <form
                 className="exit-form"
+                data-sending={sending}
                 onSubmit={(event) => handleLeadSubmit(event, "exit form", () => setExitOpen(false))}
               >
-                <input type="text" name="exit-name" placeholder="Full name" autoComplete="name" />
-                <input type="tel" name="exit-phone" placeholder="Mobile number" autoComplete="tel" inputMode="tel" />
+                <input type="text" name="exit-name" data-field="name" placeholder="Full name" autoComplete="name" maxLength={60} aria-invalid={Boolean(exitErrors.name)} required />
+                {exitErrors.name ? <em className="field-error">{exitErrors.name}</em> : null}
+                <input type="tel" name="exit-phone" data-field="phone" placeholder="10-digit mobile number" autoComplete="tel" inputMode="numeric" maxLength={15} aria-invalid={Boolean(exitErrors.phone)} required />
+                {exitErrors.phone ? <em className="field-error">{exitErrors.phone}</em> : null}
+                {exitErrors.submit ? <em className="field-error field-error-submit">{exitErrors.submit}</em> : null}
                 <motion.button type="submit" whileHover={reduceMotion ? undefined : magneticHover} whileTap={{ scale: 0.98 }}>
                   Send Villa Details
                   <ChevronRight size={17} />

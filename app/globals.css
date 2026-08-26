@@ -4061,3 +4061,41 @@ footer a:hover {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ---- Lead form validation -------------------------------------------------
+   Inline, per-field messages. Shown only after a submit attempt, so nobody is
+   scolded for a field they have not finished typing yet. */
+.field-error {
+  color: #ff8f5a;
+  display: block;
+  font-size: 12.5px;
+  font-style: normal;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.35;
+  margin: -4px 0 2px;
+}
+
+/* The hero and exit cards sit on a light panel, where orange-on-cream is weak. */
+.hero-lead-form .field-error,
+.exit-form .field-error {
+  color: #c0410d;
+}
+
+.field-error-submit {
+  border-left: 2px solid currentColor;
+  margin-top: 6px;
+  padding-left: 10px;
+}
+
+input[aria-invalid="true"] {
+  border-color: #e0561b !important;
+  box-shadow: 0 0 0 3px rgba(224, 86, 27, 0.16) !important;
+}
+
+/* Sending state — the button stays put but stops accepting taps. */
+form[data-sending="true"] button[type="submit"] {
+  cursor: progress;
+  opacity: 0.72;
+  pointer-events: none;
+}
