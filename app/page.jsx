@@ -412,6 +412,7 @@ export default function HomePage() {
             <form
               className="hero-lead-form"
               data-sending={sending}
+              noValidate
               onSubmit={(event) => handleLeadSubmit(event, "hero form")}
             >
               <label>
@@ -430,7 +431,7 @@ export default function HomePage() {
               </label>
               {heroErrors.email ? <em className="field-error">{heroErrors.email}</em> : null}
               {heroErrors.submit ? <em className="field-error field-error-submit">{heroErrors.submit}</em> : null}
-              <motion.button className="hero-primary-submit" type="submit" whileHover={reduceMotion ? undefined : magneticHover} whileTap={{ scale: 0.98 }}>
+              <motion.button className="hero-primary-submit" type="submit" disabled={sending} whileHover={reduceMotion ? undefined : magneticHover} whileTap={{ scale: 0.98 }}>
                 Request Villa Details
                 <ChevronRight size={18} />
               </motion.button>
@@ -755,6 +756,7 @@ export default function HomePage() {
           <form
             className="lead-form"
             data-sending={sending}
+            noValidate
             onSubmit={(event) => handleLeadSubmit(event, "appointment form")}
           >
             <label>
@@ -773,7 +775,7 @@ export default function HomePage() {
             </label>
             {apptErrors.email ? <em className="field-error">{apptErrors.email}</em> : null}
             {apptErrors.submit ? <em className="field-error field-error-submit">{apptErrors.submit}</em> : null}
-            <motion.button type="submit" whileHover={reduceMotion ? undefined : magneticHover} whileTap={{ scale: 0.98 }}>
+            <motion.button type="submit" disabled={sending} whileHover={reduceMotion ? undefined : magneticHover} whileTap={{ scale: 0.98 }}>
               Schedule Private Walkthrough
               <ChevronRight size={18} />
             </motion.button>
@@ -876,6 +878,7 @@ export default function HomePage() {
               <form
                 className="exit-form"
                 data-sending={sending}
+                noValidate
                 onSubmit={(event) => handleLeadSubmit(event, "exit form", () => setExitOpen(false))}
               >
                 <input type="text" name="exit-name" data-field="name" placeholder="Full name" autoComplete="name" maxLength={60} aria-invalid={Boolean(exitErrors.name)} required />
@@ -883,7 +886,7 @@ export default function HomePage() {
                 <input type="tel" name="exit-phone" data-field="phone" placeholder="10-digit mobile number" autoComplete="tel" inputMode="numeric" maxLength={15} aria-invalid={Boolean(exitErrors.phone)} required />
                 {exitErrors.phone ? <em className="field-error">{exitErrors.phone}</em> : null}
                 {exitErrors.submit ? <em className="field-error field-error-submit">{exitErrors.submit}</em> : null}
-                <motion.button type="submit" whileHover={reduceMotion ? undefined : magneticHover} whileTap={{ scale: 0.98 }}>
+                <motion.button type="submit" disabled={sending} whileHover={reduceMotion ? undefined : magneticHover} whileTap={{ scale: 0.98 }}>
                   Send Villa Details
                   <ChevronRight size={17} />
                 </motion.button>
